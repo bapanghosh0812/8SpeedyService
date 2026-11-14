@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>8SpeedyService — Roadside Mechanic Platform (Customer & Partner Apps)</title>
+  <meta name="description" content="8SpeedyService on-demand roadside mechanic platform. Launch the Customer 3-Tap Booking App or the Partner Mechanic Duty Console.">
+  <meta name="theme-color" content="#2C5E80">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="8SpeedyService">
+  <meta property="og:title" content="8SpeedyService — Instant On-Road Mechanic in 3 Taps">
+  <meta property="og:description" content="Launch the Customer App (/customer/) or Partner Mechanic Console (/partner/).">
+  <meta property="og:image" content="/icons/Icon-512.png">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <style>
+    :root {
+      --primary: #2C5E80;
+      --primary-steel: #537E9B;
+      --primary-dark: #1B3E56;
+      --bg: #F5F7FA;
+      --surface: #FFFFFF;
+      --text: #0F172A;
+      --muted: #475569;
+      --border: #E2E8F0;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .container {
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 40px 20px;
+      width: 100%;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 28px;
+    }
+    .brand img {
+      width: 56px;
+      height: 56px;
+      border-radius: 14px;
+      border: 1px solid rgba(44, 94, 128, 0.25);
+    }
+    .brand h1 {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+    .brand p {
+      font-size: 14px;
+      color: var(--muted);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 26px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 18px;
+    }
+    .badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.6px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: rgba(44, 94, 128, 0.1);
+      color: var(--primary);
+      margin-bottom: 10px;
+    }
+    .card h2 {
+      font-size: 20px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+    .card p {
+      font-size: 14px;
+      line-height: 1.55;
+      color: var(--muted);
+    }
+    .features {
+      list-style: none;
+      font-size: 13.5px;
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 15px;
+      padding: 14px 20px;
+      border-radius: 12px;
+      background: var(--primary);
+      color: #fff;
+      transition: background 0.15s ease;
+    }
+    .btn:hover { background: var(--primary-dark); }
+    .btn-secondary {
+      background: #0F172A;
+    }
+    .btn-secondary:hover { background: #1E293B; }
+    footer {
+      text-align: center;
+      padding: 20px;
+      font-size: 13px;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <div class="brand">
+      <img src="/icons/Icon-192.png" alt="8SpeedyService Logo">
+      <div>
+        <h1>8SpeedyService</h1>
+        <p>Instant On-Road Mechanic Dispatch Platform • Separate Customer & Partner Apps</p>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <div>
+          <span class="badge">in.speedyservice8.customer</span>
+          <h2>8SpeedyService Customer App</h2>
+          <p>Vehicle broke down mid-road? Book a verified nearby mechanic in 3 taps with fixed visit fees and live GPS radar tracking.</p>
+        </div>
+        <ul class="features">
+          <li>• Tap 1: Pick Issue (Puncture, Battery, Won't Start, Brake/Clutch)</li>
+          <li>• Tap 2: Pick Vehicle (Bike ₹149, Scooter ₹149, Auto ₹199, Car ₹249, Truck ₹399)</li>
+          <li>• Tap 3: Book Mechanic + 4-Digit Start OTP Security</li>
+        </ul>
+        <a class="btn" href="/customer/" target="_blank" rel="noopener">Open Customer App (/customer/) →</a>
+      </div>
+
+      <div class="card">
+        <div>
+          <span class="badge">in.speedyservice8.partner</span>
+          <h2>8SpeedyService Partner App</h2>
+          <p>Dedicated console for roadside mechanics and garages to receive nearby breakdown jobs, verify 4-digit Start OTPs, and track earnings.</p>
+        </div>
+        <ul class="features">
+          <li>• Workshop KYC Registration (ID Proof, Selfie, Shop Photo)</li>
+          <li>• ONLINE / OFFLINE Duty Switch & 20s Job Offer Alerts</li>
+          <li>• 4-Digit Start OTP Verification, Extra Part Billing & 15% Ledger</li>
+        </ul>
+        <a class="btn btn-secondary" href="/partner/" target="_blank" rel="noopener">Open Partner Mechanic App (/partner/) →</a>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    Copyright © 2026 8SpeedyService. All rights reserved.
+  </footer>
+</body>
+</html>
