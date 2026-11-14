@@ -1,0 +1,35 @@
+# Node & Backend local data
+node_modules/
+backend/node_modules/
+backend/dist/
+backend/data/
+.env
+.env.*
+!.env.example
+backend/.env
+backend/.env.*
+!backend/.env.example
+backend/service-account.json
+
+# Flutter / Dart build & tool caches
+**/.dart_tool/
+**/.packages
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/pubspec.lock
+apps/customer/build/
+apps/partner/build/
+packages/speedy_core/build/
+
+# Android / iOS / Desktop local gradle & IDE files
+**/android/.gradle/
+**/android/local.properties
+**/android/**/GeneratedPluginRegistrant.java
+**/ios/Pods/
+**/ios/.symlinks/
+.idea/
+.vscode/
+*.iml
+*.log
+.DS_Store
+Thumbs.db

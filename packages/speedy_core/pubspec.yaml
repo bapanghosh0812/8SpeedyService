@@ -1,0 +1,20 @@
+name: speedy_core
+description: Shared models, Material 3 brand theme, vector logo mark, API client, and realtime socket client for 8SpeedyService Customer & Partner apps.
+version: 3.0.0
+publish_to: none
+
+environment:
+  sdk: ^3.5.0
+  flutter: ">=3.24.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.2.2
+  socket_io_client: ^3.0.2
+  shared_preferences: ^2.3.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0

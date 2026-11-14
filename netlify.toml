@@ -1,0 +1,27 @@
+# 8SpeedyService — Netlify Configuration
+# Supports:
+# 1) Single Netlify site hosting the portal (/), Customer App (/customer/), and Partner App (/partner/)
+# 2) Two separate Netlify sites from this same repository:
+#    - Customer Site: set Publish directory = "deploy/customer"
+#    - Partner Site:  set Publish directory = "deploy/partner"
+
+[build]
+  command = "echo 'Deploying 8SpeedyService production web bundles'"
+  publish = "deploy/web"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+[[redirects]]
+  from = "/customer/*"
+  to = "/customer/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/partner/*"
+  to = "/partner/index.html"
+  status = 200
