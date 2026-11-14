@@ -1,0 +1,23 @@
+name: speedy_customer
+description: "8SpeedyService Customer App — Rapido-style 3-tap instant roadside mechanic booking."
+publish_to: 'none'
+version: 3.0.0+1
+
+environment:
+  sdk: ^3.5.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  speedy_core:
+    path: ../../packages/speedy_core
+  socket_io_client: ^3.0.2
+  url_launcher: ^6.3.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
