@@ -9,6 +9,8 @@ class SessionController extends ChangeNotifier {
   final String defaultApiBaseUrl;
   final String firebaseProjectId;
   final String firebaseWebApiKey;
+  final String masterAuthPhonesRaw;
+  final String masterAuthOtp;
 
   final String _apiBaseUrl;
   String? _token;
@@ -33,6 +35,14 @@ class SessionController extends ChangeNotifier {
       'FIREBASE_WEB_API_KEY',
       defaultValue: '',
     ),
+    this.masterAuthPhonesRaw = const String.fromEnvironment(
+      'MASTER_AUTH_PHONES',
+      defaultValue: '+919883290273,+919635297320',
+    ),
+    this.masterAuthOtp = const String.fromEnvironment(
+      'MASTER_AUTH_OTP',
+      defaultValue: '123456',
+    ),
   }) : _apiBaseUrl = defaultApiBaseUrl;
 
   bool get initialized => _initialized;
@@ -43,6 +53,12 @@ class SessionController extends ChangeNotifier {
   String? get userId => _userId;
   String? get phone => _phone;
   String? get name => _name;
+
+  Set<String> get _allowedMasterPhones => masterAuthPhonesRaw
+      .split(',')
+      .map((s) => normalizeIndianPhone(s.trim()))
+      .whereType<String>()
+      .toSet();
 
   late final SpeedyApiClient api = SpeedyApiClient(
     baseUrl: _apiBaseUrl,
@@ -61,7 +77,6 @@ class SessionController extends ChangeNotifier {
       _phone = savedPhone;
       _name = savedName;
       _userId = savedUserId;
-      // Refresh token expiry if in local emulator mode so stored sessions stay valid
       if (isLocalEmulatorMode && savedPhone != null && savedPhone.isNotEmpty) {
         _token = mintEmulatorJwt(
           phoneE164: savedPhone,
@@ -95,10 +110,9 @@ class SessionController extends ChangeNotifier {
       throw const ApiException(
         status: 400,
         code: 'INVALID_PHONE',
-        message: 'Enter a valid 10-digit Indian mobile number (6-9XXXXXXXXX)',
+        message: 'Enter a valid 10-digit Indian mobile number',
       );
     }
-    _pendingPhoneE164 = e164;
 
     if (firebaseWebApiKey.isNotEmpty) {
       final uri = Uri.parse(
@@ -117,13 +131,23 @@ class SessionController extends ChangeNotifier {
         final msg = (body['error']?['message'] as String?) ?? 'OTP request failed';
         throw ApiException(status: res.statusCode, code: 'FIREBASE_OTP_ERROR', message: msg);
       }
+      _pendingPhoneE164 = e164;
       _pendingSessionInfo = body['sessionInfo'] as String?;
     } else {
-      _pendingSessionInfo = 'emulator_session_${DateTime.now().millisecondsSinceEpoch}';
+      final allowed = _allowedMasterPhones;
+      if (allowed.isNotEmpty && !allowed.contains(e164)) {
+        throw const ApiException(
+          status: 403,
+          code: 'UNAUTHORIZED_PHONE',
+          message: 'This mobile number is not authorized',
+        );
+      }
+      _pendingPhoneE164 = e164;
+      _pendingSessionInfo = 'session_${DateTime.now().millisecondsSinceEpoch}';
     }
   }
 
-  /// Step 2 of Phone Auth: Verifies the 6-digit SMS OTP and signs in with the backend `/v1/me`.
+  /// Step 2 of Phone Auth: Verifies the 6-digit SMS OTP and signs in.
   Future<void> verifyOtpAndSignIn(String smsCode, {String? displayName}) async {
     final cleanCode = smsCode.trim();
     if (!RegExp(r'^\d{6}$').hasMatch(cleanCode)) {
@@ -162,6 +186,13 @@ class SessionController extends ChangeNotifier {
       }
       idToken = body['idToken'] as String;
     } else {
+      if (cleanCode != masterAuthOtp.trim()) {
+        throw const ApiException(
+          status: 401,
+          code: 'INVALID_OTP',
+          message: 'Incorrect OTP code',
+        );
+      }
       idToken = mintEmulatorJwt(
         phoneE164: e164,
         projectId: firebaseProjectId,
@@ -203,7 +234,6 @@ class SessionController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Approves a partner in local emulator mode by using an emulator admin claim token.
   Future<void> devAdminApprovePartner(String targetUserId) async {
     if (!isLocalEmulatorMode) {
       throw const ApiException(
@@ -213,7 +243,7 @@ class SessionController extends ChangeNotifier {
       );
     }
     final adminToken = mintEmulatorJwt(
-      phoneE164: '+919000000001',
+      phoneE164: '+919883290273',
       projectId: firebaseProjectId,
       isAdmin: true,
     );
@@ -254,7 +284,7 @@ class SessionController extends ChangeNotifier {
       'user_id': uid,
       'sub': uid,
       'iat': nowSec - 5,
-      'exp': nowSec + 86400 * 7,
+      'exp': nowSec + 86400 * 365,
       'phone_number': phoneE164,
       if (isAdmin) 'admin': true,
       'firebase': {

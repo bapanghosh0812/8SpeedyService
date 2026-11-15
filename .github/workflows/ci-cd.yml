@@ -8,7 +8,9 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
+  pages: write
+  id-token: write
 
 jobs:
   backend:
@@ -81,35 +83,65 @@ jobs:
         run: |
           flutter pub get
           flutter analyze
-          flutter build web --release --no-wasm-dry-run
-          flutter build apk --release
+          flutter build web --release --no-wasm-dry-run --dart-define="MASTER_AUTH_PHONES=${{ vars.MASTER_AUTH_PHONES || '+919883290273,+919635297320' }}" --dart-define="MASTER_AUTH_OTP=${{ vars.MASTER_AUTH_OTP || '123456' }}"
+          flutter build apk --release --dart-define="MASTER_AUTH_PHONES=${{ vars.MASTER_AUTH_PHONES || '+919883290273,+919635297320' }}" --dart-define="MASTER_AUTH_OTP=${{ vars.MASTER_AUTH_OTP || '123456' }}"
 
       - name: Build Partner App (Web + Android APK)
         working-directory: apps/partner
         run: |
           flutter pub get
           flutter analyze
-          flutter build web --release --no-wasm-dry-run
-          flutter build apk --release
+          flutter build web --release --no-wasm-dry-run --dart-define="MASTER_AUTH_PHONES=${{ vars.MASTER_AUTH_PHONES || '+919883290273,+919635297320' }}" --dart-define="MASTER_AUTH_OTP=${{ vars.MASTER_AUTH_OTP || '123456' }}"
+          flutter build apk --release --dart-define="MASTER_AUTH_PHONES=${{ vars.MASTER_AUTH_PHONES || '+919883290273,+919635297320' }}" --dart-define="MASTER_AUTH_OTP=${{ vars.MASTER_AUTH_OTP || '123456' }}"
 
-      - name: Upload Android Release APKs
+      - name: Upload Customer Android APK
         uses: actions/upload-artifact@v4
         with:
-          name: 8SpeedyService-Android-APKs
-          path: |
-            apps/customer/build/app/outputs/flutter-apk/app-release.apk
-            apps/partner/build/app/outputs/flutter-apk/app-release.apk
+          name: 8SpeedyService-Customer-APK
+          path: apps/customer/build/app/outputs/flutter-apk/app-release.apk
 
-  deploy-verify:
-    name: Web Bundle Verification
+      - name: Upload Partner Android APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: 8SpeedyService-Partner-APK
+          path: apps/partner/build/app/outputs/flutter-apk/app-release.apk
+
+  deploy-cd:
+    name: Live Web CD & Preview Links
     runs-on: ubuntu-latest
     needs: [backend, mobile-and-web]
+    environment:
+      name: production-preview
+      url: https://bapanghosh0812.github.io/8SpeedyService/
 
     steps:
       - uses: actions/checkout@v4
-      - run: |
+
+      - name: Verify Standalone & Combined Web Bundles
+        run: |
           test -f deploy/customer/index.html
           test -f deploy/partner/index.html
           test -f deploy/web/index.html
           test -f deploy/web/customer/index.html
           test -f deploy/web/partner/index.html
+          touch deploy/web/.nojekyll
+
+      - name: Deploy Live Web Portal to GitHub Pages Branch (CD)
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+        uses: peaceiris/actions-gh-pages@v4
+        continue-on-error: true
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./deploy/web
+          force_orphan: true
+
+      - name: Publish Live Preview URLs to Workflow Summary
+        run: |
+          cat << 'EOF' >> $GITHUB_STEP_SUMMARY
+          ## 🚀 8SpeedyService — Continuous Deployment (CD) Live Links
+          | Application | Live Web URL | Netlify Publish Directory |
+          | :--- | :--- | :--- |
+          | **Customer App (Standalone)** | [Open Customer App](https://bapanghosh0812.github.io/8SpeedyService/customer/) | `deploy/customer` |
+          | **Partner App (Standalone)** | [Open Partner App](https://bapanghosh0812.github.io/8SpeedyService/partner/) | `deploy/partner` |
+          | **Unified Portal (Both Apps)** | [Open Unified Portal](https://bapanghosh0812.github.io/8SpeedyService/) | `deploy/web` |
+          EOF

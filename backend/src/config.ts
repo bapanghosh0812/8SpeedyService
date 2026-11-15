@@ -12,15 +12,22 @@ const EnvSchema = z.object({
   DB_POOL_MAX: z.coerce.number().int().positive().default(10),
   DB_SSL: bool,
 
-  // Firebase project used for Phone Auth, FCM push and (optionally) App Check.
   FIREBASE_PROJECT_ID: z.string().min(1, 'FIREBASE_PROJECT_ID is required'),
-  // Base64 of the service-account JSON. Not needed on Cloud Run (uses the runtime identity)
-  // or when FIREBASE_AUTH_EMULATOR_HOST is set for local tests.
   FIREBASE_SERVICE_ACCOUNT_B64: z.string().optional(),
   FIREBASE_AUTH_EMULATOR_HOST: z.string().optional(),
   APP_CHECK_ENFORCE: bool,
 
-  // KYC document storage: a GCS bucket in production, a local folder in development.
+  MASTER_AUTH_PHONES: z
+    .string()
+    .default('+919883290273,+919635297320')
+    .transform((s) =>
+      s
+        .split(',')
+        .map((x) => x.trim())
+        .filter(Boolean),
+    ),
+  MASTER_AUTH_OTP: z.string().default('123456'),
+
   STORAGE_BUCKET: z.string().optional(),
   LOCAL_UPLOAD_DIR: z.string().default('./data/uploads'),
 
@@ -31,7 +38,6 @@ const EnvSchema = z.object({
     .default('true')
     .transform((v) => v === 'true' || v === '1'),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
-  // Seconds a partner has to accept an offer, and the dispatch radii per wave (metres).
   OFFER_TTL_SECONDS: z.coerce.number().int().min(5).max(120).default(20),
   DISPATCH_RADII_M: z
     .string()

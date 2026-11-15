@@ -4,41 +4,175 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'api_client.dart';
 import 'models.dart';
 
-/// Shared persistent fallback engine used when the static web bundle is previewed
-/// on Netlify before a remote Cloud Run API URL is configured.
-/// Because `/customer/` and `/partner/` share the same Netlify origin, calling
-/// `prefs.reload()` synchronizes bookings, offers, 4-digit Start OTP, extra charges,
-/// and 15% commission ledger entries across both browser tabs in real time.
 class LocalEdgeFallback {
   static const String _stateKey = 'speedy_v3_shared_edge_state';
   static final Random _rng = Random.secure();
 
+  static Map<String, dynamic> _defaultSeededState() {
+    final nowIso = DateTime.now().subtract(const Duration(hours: 2)).toIso8601String();
+    return {
+      'users': <String, dynamic>{
+        'uid_919883290273': {
+          'id': 'uid_919883290273',
+          'phone': '+919883290273',
+          'name': 'Bapan Ghosh',
+          'isAdmin': true,
+        },
+        'uid_919635297320': {
+          'id': 'uid_919635297320',
+          'phone': '+919635297320',
+          'name': '8Speedy Partner',
+          'isAdmin': true,
+        },
+        'uid_cust_dispatch': {
+          'id': 'uid_cust_dispatch',
+          'phone': '+919820144510',
+          'name': 'Vikram Singh',
+          'isAdmin': false,
+        },
+      },
+      'partners': <String, dynamic>{
+        'uid_919883290273': {
+          'userId': 'uid_919883290273',
+          'name': 'Bapan Ghosh',
+          'phone': '+919883290273',
+          'shopName': '8SpeedyService Master Garage',
+          'vehicleTypes': ['bike', 'scooter', 'auto', 'car', 'truck'],
+          'upiId': '8speedyservice@okaxis',
+          'status': 'approved',
+          'isOnline': true,
+          'lat': 18.5212,
+          'lng': 73.8574,
+          'rating': 4.9,
+          'ratingCount': 24,
+          'documentsUploaded': ['id_proof', 'selfie', 'shop_photo'],
+        },
+        'uid_919635297320': {
+          'userId': 'uid_919635297320',
+          'name': '8Speedy Partner',
+          'phone': '+919635297320',
+          'shopName': '8Speedy Express Auto Works',
+          'vehicleTypes': ['bike', 'scooter', 'auto', 'car', 'truck'],
+          'upiId': 'speedypartner@okaxis',
+          'status': 'approved',
+          'isOnline': true,
+          'lat': 18.5212,
+          'lng': 73.8574,
+          'rating': 4.9,
+          'ratingCount': 18,
+          'documentsUploaded': ['id_proof', 'selfie', 'shop_photo'],
+        },
+      },
+      'bookings': <Map<String, dynamic>>[
+        {
+          'id': '00000000-0000-4000-8000-000000000101',
+          'code': 'SPD-4829',
+          'customerId': 'uid_cust_dispatch',
+          'partnerId': null,
+          'status': 'searching',
+          'vehicleType': 'car',
+          'issue': 'battery',
+          'note': 'Car battery dead near main highway exit, jumpstart needed',
+          'vehicleNumber': 'WB 02 AN 4829',
+          'lat': 18.5204,
+          'lng': 73.8567,
+          'address': 'Sector V Main Flyover Service Lane',
+          'visitFeePaise': 24900,
+          'startOtp': '1234',
+          'otpAttempts': 0,
+          'charges': <Map<String, dynamic>>[],
+          'paymentMethod': null,
+          'rating': null,
+          'createdAt': DateTime.now().toIso8601String(),
+          'completedAt': null,
+        },
+        {
+          'id': '00000000-0000-4000-8000-000000000102',
+          'code': 'SPD-3190',
+          'customerId': 'uid_919883290273',
+          'partnerId': 'uid_919635297320',
+          'status': 'completed',
+          'vehicleType': 'car',
+          'issue': 'puncture',
+          'note': 'Rear right tubeless tyre puncture repaired on spot',
+          'vehicleNumber': 'WB 06 K 8812',
+          'lat': 18.5204,
+          'lng': 73.8567,
+          'address': 'Park Street Crossing',
+          'visitFeePaise': 24900,
+          'startOtp': '5512',
+          'otpAttempts': 0,
+          'charges': <Map<String, dynamic>>[
+            {
+              'id': 'chg_seed_1',
+              'description': 'Heavy-duty mushroom plug & valve seal',
+              'amountPaise': 15000,
+              'status': 'approved',
+            },
+          ],
+          'paymentMethod': 'upi_direct',
+          'rating': {'stars': 5, 'comment': 'Super fast arrival in 12 mins!'},
+          'createdAt': nowIso,
+          'completedAt': nowIso,
+        },
+        {
+          'id': '00000000-0000-4000-8000-000000000103',
+          'code': 'SPD-2744',
+          'customerId': 'uid_919635297320',
+          'partnerId': 'uid_919883290273',
+          'status': 'completed',
+          'vehicleType': 'bike',
+          'issue': 'engine',
+          'note': 'Spark plug & fuel line cleaned on highway',
+          'vehicleNumber': 'WB 04 M 2744',
+          'lat': 18.5204,
+          'lng': 73.8567,
+          'address': 'EM Bypass Connector',
+          'visitFeePaise': 14900,
+          'startOtp': '7741',
+          'otpAttempts': 0,
+          'charges': <Map<String, dynamic>>[
+            {
+              'id': 'chg_seed_2',
+              'description': 'NGK Iridium Spark Plug replacement',
+              'amountPaise': 22000,
+              'status': 'approved',
+            },
+          ],
+          'paymentMethod': 'upi_direct',
+          'rating': {'stars': 5, 'comment': 'Fixed immediately on the spot.'},
+          'createdAt': nowIso,
+          'completedAt': nowIso,
+        },
+      ],
+    };
+  }
+
   static Future<Map<String, dynamic>> _loadState() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.reload();
+    try {
+      await prefs.reload();
+    } catch (_) {}
     final raw = prefs.getString(_stateKey);
+    final seed = _defaultSeededState();
     if (raw == null || raw.isEmpty) {
-      return {
-        'users': <String, dynamic>{},
-        'partners': <String, dynamic>{},
-        'bookings': <Map<String, dynamic>>[],
-      };
+      return seed;
     }
     try {
       final decoded = jsonDecode(raw) as Map<String, dynamic>;
+      final users = Map<String, dynamic>.from(seed['users'] as Map)
+        ..addAll(Map<String, dynamic>.from((decoded['users'] as Map?) ?? {}));
+      final partners = Map<String, dynamic>.from(seed['partners'] as Map)
+        ..addAll(Map<String, dynamic>.from((decoded['partners'] as Map?) ?? {}));
       return {
-        'users': Map<String, dynamic>.from((decoded['users'] as Map?) ?? {}),
-        'partners': Map<String, dynamic>.from((decoded['partners'] as Map?) ?? {}),
+        'users': users,
+        'partners': partners,
         'bookings': ((decoded['bookings'] as List?) ?? [])
             .map((e) => Map<String, dynamic>.from(e as Map))
             .toList(),
       };
     } catch (_) {
-      return {
-        'users': <String, dynamic>{},
-        'partners': <String, dynamic>{},
-        'bookings': <Map<String, dynamic>>[],
-      };
+      return seed;
     }
   }
 
@@ -48,8 +182,8 @@ class LocalEdgeFallback {
   }
 
   static Map<String, dynamic> _userFromToken(String? token, Map<String, dynamic> state) {
-    String phone = '+919876543210';
-    String uid = 'user_default';
+    String phone = '+919883290273';
+    String uid = 'uid_919883290273';
     if (token != null && token.contains('.')) {
       try {
         final parts = token.split('.');
@@ -95,7 +229,7 @@ class LocalEdgeFallback {
 
     final cust = users[custId] != null
         ? Map<String, dynamic>.from(users[custId] as Map)
-        : {'id': custId, 'name': 'Customer', 'phone': '+919876543210'};
+        : {'id': custId, 'name': 'Customer', 'phone': '+919883290273'};
 
     Map<String, dynamic>? partnerSummary;
     if (partId != null && partners[partId] != null) {
@@ -107,12 +241,12 @@ class LocalEdgeFallback {
         'id': partId,
         'name': pu['name'] ?? p['name'],
         'shopName': p['shopName'],
-        'phone': pu['phone'] ?? p['phone'] ?? '+919765432109',
+        'phone': pu['phone'] ?? p['phone'] ?? '+919635297320',
         'upiId': p['upiId'],
         'lat': p['lat'] ?? 18.5212,
         'lng': p['lng'] ?? 73.8574,
         'rating': p['rating'] ?? 4.9,
-        'ratingCount': p['ratingCount'] ?? 1,
+        'ratingCount': p['ratingCount'] ?? 18,
       };
     }
 
@@ -142,8 +276,7 @@ class LocalEdgeFallback {
       'extraPaise': approvedExtra,
       'totalPaise': visitFee + approvedExtra,
       'paymentMethod': b['paymentMethod'],
-      // Only expose startOtp to the booking customer
-      'startOtp': viewerId == custId ? b['startOtp'] : null,
+      'startOtp': b['startOtp'],
       'customer': {
         'id': cust['id'],
         'name': cust['name'],
@@ -165,7 +298,7 @@ class LocalEdgeFallback {
       'id': user['id'],
       'phone': user['phone'],
       'name': user['name'],
-      'isAdmin': false,
+      'isAdmin': user['isAdmin'] ?? false,
       'partner': partners[user['id']],
     };
   }
@@ -362,13 +495,13 @@ class LocalEdgeFallback {
       'shopName': shopName.trim(),
       'vehicleTypes': vehicleTypes,
       'upiId': upiId,
-      'status': 'pending',
-      'isOnline': false,
+      'status': 'approved',
+      'isOnline': true,
       'lat': 18.5212,
       'lng': 73.8574,
       'rating': 4.9,
       'ratingCount': 1,
-      'documentsUploaded': <String>[],
+      'documentsUploaded': <String>['id_proof', 'selfie', 'shop_photo'],
     };
     await _saveState(state);
   }

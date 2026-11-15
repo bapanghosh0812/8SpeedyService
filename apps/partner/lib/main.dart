@@ -72,9 +72,6 @@ class _PartnerAuthScreenState extends State<PartnerAuthScreen> {
     });
     try {
       await widget.session.requestOtp(_phoneCtrl.text);
-      if (widget.session.isLocalEmulatorMode && _otpCtrl.text.isEmpty) {
-        _otpCtrl.text = '123456';
-      }
       if (mounted) setState(() => _otpSent = true);
     } on ApiException catch (e) {
       if (mounted) setState(() => _error = e.message);
@@ -198,16 +195,6 @@ class _PartnerAuthScreenState extends State<PartnerAuthScreen> {
                                 prefixIcon: Icon(Icons.lock_outline_rounded),
                               ),
                             ),
-                            if (widget.session.isLocalEmulatorMode)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 8),
-                                child: Text(
-                                  'Local Auth Emulator active — use any 6-digit OTP (e.g. 123456).',
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: SpeedyPalette.primary,
-                                  ),
-                                ),
-                              ),
                           ],
                           if (_error != null) ...[
                             const SizedBox(height: 12),

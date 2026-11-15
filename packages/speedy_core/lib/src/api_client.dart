@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:socket_io_client/socket_io_client.dart' as io;
 import 'local_fallback.dart';
@@ -23,12 +24,24 @@ class SpeedyApiClient {
   final String baseUrl;
   final String? Function() getToken;
   final http.Client _http;
+  bool _remoteUnreachable = false;
 
   SpeedyApiClient({
     required this.baseUrl,
     required this.getToken,
     http.Client? httpClient,
-  }) : _http = httpClient ?? http.Client();
+  }) : _http = httpClient ?? http.Client() {
+    if (kIsWeb) {
+      final host = Uri.base.host;
+      final isLocalPage = host == '127.0.0.1' || host == 'localhost';
+      final pointsToLocalhost =
+          baseUrl.contains('127.0.0.1') || baseUrl.contains('localhost');
+      if (!isLocalPage && pointsToLocalhost) {
+        // Running on Netlify / static HTTPS preview without remote backend configured yet
+        _remoteUnreachable = true;
+      }
+    }
+  }
 
   Uri _uri(String path) => Uri.parse('$baseUrl$path');
 
@@ -57,9 +70,7 @@ class SpeedyApiClient {
         if (decoded is Map<String, dynamic>) {
           body = decoded;
         }
-      } catch (_) {
-        // Non-JSON response body
-      }
+      } catch (_) {}
     }
     if (res.statusCode < 200 || res.statusCode >= 300) {
       throw ApiException(
@@ -74,7 +85,7 @@ class SpeedyApiClient {
   Future<Map<String, dynamic>> _get(String path) async {
     final res = await _http
         .get(_uri(path), headers: _headers())
-        .timeout(const Duration(seconds: 4));
+        .timeout(const Duration(milliseconds: 1200));
     return _decodeResponse(res);
   }
 
@@ -89,7 +100,7 @@ class SpeedyApiClient {
           headers: _headers(extra: extraHeaders, jsonBody: body != null),
           body: body != null ? jsonEncode(body) : null,
         )
-        .timeout(const Duration(seconds: 4));
+        .timeout(const Duration(milliseconds: 1200));
     return _decodeResponse(res);
   }
 
@@ -100,7 +111,7 @@ class SpeedyApiClient {
           headers: _headers(jsonBody: true),
           body: jsonEncode(body),
         )
-        .timeout(const Duration(seconds: 4));
+        .timeout(const Duration(milliseconds: 1200));
     return _decodeResponse(res);
   }
 
@@ -108,11 +119,15 @@ class SpeedyApiClient {
     Future<T> Function() remoteCall,
     Future<T> Function() edgeFallback,
   ) async {
+    if (_remoteUnreachable) {
+      return await edgeFallback();
+    }
     try {
       return await remoteCall();
     } on ApiException {
       rethrow;
     } catch (_) {
+      _remoteUnreachable = true;
       return await edgeFallback();
     }
   }
@@ -339,7 +354,7 @@ class SpeedyApiClient {
               filename: filename,
             ),
           );
-          final streamed = await _http.send(req).timeout(const Duration(seconds: 4));
+          final streamed = await _http.send(req).timeout(const Duration(milliseconds: 1200));
           final res = await http.Response.fromStream(streamed);
           _decodeResponse(res);
         },
@@ -487,9 +502,12 @@ class SpeedyApiClient {
   // Socket.IO Realtime Connection
   // ---------------------------------------------------------------------------
 
-  io.Socket connectSocket({
+  io.Socket? connectSocket({
     required void Function(String event, Map<String, dynamic> data) onEvent,
   }) {
+    if (_remoteUnreachable) {
+      return null;
+    }
     final token = getToken() ?? '';
     final socket = io.io(
       baseUrl,
